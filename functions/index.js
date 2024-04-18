@@ -1,35 +1,52 @@
-const functions = require('firebase-functions');
-const AlexaASK = require('ask-sdk-core');
-const { SkillRequestSignatureVerifier, TimestampVerifier } = require('ask-sdk-express-adapter');
+const functions = require('firebase-functions'); 
 
-...your ASK code..
 
-let skillBuilder;
+exports.alexaSkill = functions.https.onRequest((request, response) => {
+  const type = JSON.stringify(request.body.request.type);
+  const name = JSON.stringify(request.body.request.intent.name);
+  
+  const result = getAlexaResponse(type, name);
 
-exports.alexaskill = functions.https.onRequest((req, response) => {
-    if (!skillBuilder) {
-        skillBuilder = AlexaASK.SkillBuilders.custom()
-            .addRequestHandlers(
-                LaunchRequestHandler,
-                ExitHandler,
-                SessionEndedRequestHandler
-            )
-            .addErrorHandlers(ErrorHandler)
-            .create();
-    } // only create the skill builder on the first invocation; otherwise it's static
-
-   // validate that the signatures match
-    try {
-        const textBody = req.rawBody.toString()
-        await new SkillRequestSignatureVerifier().verify(textBody, req.headers);
-        await new TimestampVerifier().verify(textBody);
-    } catch (err) {
-        // server return err message
-        response.send(403, JSON.stringify(err))
-    }
-
-    // invoke the skill 
-    const responseASK = skill.invoke(req.body);
-    response.send(responseASK.response); // this may just be responseASK
-
+  response.send(result);
 });
+
+const getAlexaResponse = (type, name) => {  
+  var AlexaDefaultAnswer = {
+    "version": "1.0",
+    "response": {
+      "outputSpeech": {
+        "type": "SSML",
+        "ssml": "<speak>Welcome to the Alexa Skills Kit, you can say hello!</speak>"
+      },
+      "shouldEndSession": false,
+      "card": {
+        "type": "Simple",
+        "title": "LaunchRequest",
+        "content": "Welcome to the Alexa Skills Kit, you can say hello!"
+      }
+    },
+    "userAgent": "ask-node/2.3.0 Node/v8.10.0",
+    "sessionAttributes": {}
+  }
+
+  if(type == '"LaunchRequest"') {
+      return AlexaDefaultAnswer;
+  } else if(type == '"IntentRequest"' && name =='"GetCurrentTimeIntent"'){
+      AlexaDefaultAnswer.response.outputSpeech.ssml = "<speak>" + currentTime() + "</speak>";
+      AlexaDefaultAnswer.response.card.content = currentTime();
+      return AlexaDefaultAnswer;
+  } else {
+    return AlexaDefaultAnswer;
+  }
+
+};
+
+/**********************************************************************************/
+/***********************************ANSWERS****************************************/
+/************************************************+++++++++++++++++++++++++++++++++*/
+
+function currentTime(){
+    const date = new Date();
+    //Return time in UTC !!!
+    return date.getHours() + ":" + date.getMinutes();
+};

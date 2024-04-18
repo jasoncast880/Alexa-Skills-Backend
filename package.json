@@ -13,11 +13,12 @@
   },
   "main": "index.js",
   "dependencies": {
-    "firebase-admin": "^11.8.0",
-    "firebase-functions": "^4.3.1",
     "ask-sdk-core": "^2.7.0",
+    "ask-sdk-express-adapter": "^2.14.0",
     "ask-sdk-model": "^1.19.0",
-    "aws-sdk": "^2.326.0"
+    "aws-sdk": "^2.326.0",
+    "firebase-admin": "^11.8.0",
+    "firebase-functions": "^4.3.1"
   },
   "devDependencies": {
     "firebase-functions-test": "^3.1.0"
