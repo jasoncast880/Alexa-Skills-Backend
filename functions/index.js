@@ -1,44 +1,100 @@
 const functions = require('firebase-functions');
-
 const express = require('express');
-const { SkillBuilders } = require('ask-sdk-core');
-const {ExpressAdapter} = require('ask-sdk-express-adapter');
+const { ExpressAdapter  } = require('ask-sdk-express-adapter');
+const Alexa = require('ask-sdk-core');
 
-//ask handlers here
-const app = express();
+//loging interceptors
+const LogRequestInterceptor = {
+  process(handlerInput) {
+    //Log Req
+    console.log("=REQUEST=");
+    console.log(JSON.stringify(handlerInput.reqestEnvelope, null, 2));
+  }
+}
 
-const skillBuilder = SkillBuilders.custom();
+const LogResponseInterceptor = {
+  process(handlerInput, response) {
+    //Log Req
+    console.log("=RESPONSE=");
+    console.log(JSON.stringify(response, null, 2));
+  }
+}
 
-const GetNewFactIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNewFactIntent';
+const LaunchRequestHandler = {
+  canHandle(handlerInput) {
+    Alexa.getIntentName(handlerInput.requestEnvelope) === 'LaunchRequest';
+  },
+  handle(handlerInput) {
+    const speakOutput = 'Welcome to my skill, Hello World';
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .getResponse();
+  }
+};
+
+const GeneralIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+  },
+  handle(handlerInput) {
+    const speakOutput = 'Help me';
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .getResponse();
+  }
+};
+
+const WeatherIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+    && Alexa.getIntentName(handlerInput.requestEnvelope) === 'WeatherIntent';
+  },
+  handle(handlerInput) {
+    const speakOutput = 'Todays weather is kinda hi.';
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .getResponse();
+  }
+};
+
+const SessionEndedRequestHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest'
+  },
+  handle(handlerInput) {
+    return handlerInput.responseBuilder.getResponse();
+  }
+};
+
+const ErrorHandler = {
+    canHandle() {
+        return true;
     },
-    handle(handlerInput) {
-        const speakOutput = 'hello joyce im watching you!';
+    handle(handlerInput, error) {
+        console.log(`Error handled: ${error.message}`);
+        const speakOutput = 'Sorry, I had trouble doing what you asked. Please try again.';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .reprompt(speakOutput)
             .getResponse();
     }
 };
 
-// Define your intent handlers here
-// ...
-
-// Add intent handlers to the skill builder
-skillBuilder.addRequestHandlers(
-    // Your intent handlers here
-    GetNewFactIntentHandler
-);
-
-const skill = skillBuilder.create();
-
+const app = express();
+const skillBuilder = Alexa.SkillBuilders.custom();
+const skill = skillBuilder.addRequestHandlers(
+    LaunchRequestHandler,
+    GeneralIntentHandler,
+    WeatherIntentHandler,
+    SessionEndedRequestHandler)
+  .addErrorHandlers(ErrorHandler)
+  .addRequestInterceptors(LogRequestInterceptor)
+  .addResponseInterceptors(LogResponseInterceptor)
+  .create();
 const adapter = new ExpressAdapter(skill, true, true);
 
-app.post('/', adapter.getRequestHandlers());
+app.get('/', adapter.getRequestHandlers());
 
-// Export the Express app for Firebase Cloud Functions
-exports.alexaskill = functions.https.onRequest(app);
-
+// Define and export the Firebase Cloud Function
+exports.myFirebaseFunction = functions.https.onRequest(app);
