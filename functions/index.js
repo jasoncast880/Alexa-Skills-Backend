@@ -1,52 +1,34 @@
-const functions = require('firebase-functions'); 
+const functions = require('firebase-functions');
+const Alexa = require('ask-sdk-core');
+
+const express = require('express');
+const {ExpressAdapter} = require('ask-sdk-express-adapter');
+
+//ask handlers here
+const app = express();
+const skillBuilder = Alexa.SkillBuilders.custom();
+const skill = skillBuilder.create();
+const adapter = newExpressAdapter(skill, true, true);
+
+app.post('/', adapter.getRequestHandlers());
+app.listen(3000);
 
 
-exports.alexaSkill = functions.https.onRequest((request, response) => {
-  const type = JSON.stringify(request.body.request.type);
-  const name = JSON.stringify(request.body.request.intent.name);
-  
-  const result = getAlexaResponse(type, name);
+exports.alexskill = functions.https.onRequest((req, response) => {
+  if(!skillBuilder) {
+    skillBuilder = Alexa.SkillBuilders.custom()
+      .addRequestHandlers(
+        LaunchRequestHandler,
+        ExitHandler,
+        SessionEndedRequestHandler
+      )
+      .addErrorHandlers(ErrorHandler)
+      .create();
 
-  response.send(result);
+    //possibly do validation on signatures here
+    
+    //invoke the skill
+    const responseASK = skill.invoke(req.body);
+    response.send(responseASK.response);
+    
 });
-
-const getAlexaResponse = (type, name) => {  
-  var AlexaDefaultAnswer = {
-    "version": "1.0",
-    "response": {
-      "outputSpeech": {
-        "type": "SSML",
-        "ssml": "<speak>Welcome to the Alexa Skills Kit, you can say hello!</speak>"
-      },
-      "shouldEndSession": false,
-      "card": {
-        "type": "Simple",
-        "title": "LaunchRequest",
-        "content": "Welcome to the Alexa Skills Kit, you can say hello!"
-      }
-    },
-    "userAgent": "ask-node/2.3.0 Node/v8.10.0",
-    "sessionAttributes": {}
-  }
-
-  if(type == '"LaunchRequest"') {
-      return AlexaDefaultAnswer;
-  } else if(type == '"IntentRequest"' && name =='"GetCurrentTimeIntent"'){
-      AlexaDefaultAnswer.response.outputSpeech.ssml = "<speak>" + currentTime() + "</speak>";
-      AlexaDefaultAnswer.response.card.content = currentTime();
-      return AlexaDefaultAnswer;
-  } else {
-    return AlexaDefaultAnswer;
-  }
-
-};
-
-/**********************************************************************************/
-/***********************************ANSWERS****************************************/
-/************************************************+++++++++++++++++++++++++++++++++*/
-
-function currentTime(){
-    const date = new Date();
-    //Return time in UTC !!!
-    return date.getHours() + ":" + date.getMinutes();
-};
