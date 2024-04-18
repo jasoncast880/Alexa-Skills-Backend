@@ -1,84 +1,35 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
 const functions = require('firebase-functions');
-//const {onRequest} = require("firebase-functions/v2/https");
-const Alexa = require('ask-sdk-core');
+const AlexaASK = require('ask-sdk-core');
+const { SkillRequestSignatureVerifier, TimestampVerifier } = require('ask-sdk-express-adapter');
 
-//const { ExpressAdapter } = require('ask-sdk-core');
-//const express = require('express');
-//const app = express();
+...your ASK code..
 
-//Handler Code here
-const GetNewFactIntentHandler = {
-  canHandler(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEvelope) === 'IntentRequest'
-     && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNewFactIntent';
-  },
-  handle(handlerInput) {
-    const speakOutput = 'tita baby is coming to your house!';
-    
-    return handlerInput.responseBuilder
-      .speak(speakOutput)
-      //reprompt code here
-      .getResponse();
-  }
-};
-const SessionEndedRequestHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
-  },
-  handle(handlerInput) {
-    // Any clean-up logic goes here.
-    return handlerInput.responseBuilder.getResponse();
-  }
-};
-const ErrorHandler = {
-  canHandle() {
-    return true;
-  },
-  handle(handlerInput, error) {
-    console.log(`Error handled: ${error.message}`);
+let skillBuilder;
 
-    return handlerInput.responseBuilder
-      .speak('Sorry, I don\'t understand your command. Please say it again.')
-      .reprompt('Sorry, I don\'t understand your command. Please say it again.')
-      .getResponse();
-  }
-};
+exports.alexaskill = functions.https.onRequest((req, response) => {
+    if (!skillBuilder) {
+        skillBuilder = AlexaASK.SkillBuilders.custom()
+            .addRequestHandlers(
+                LaunchRequestHandler,
+                ExitHandler,
+                SessionEndedRequestHandler
+            )
+            .addErrorHandlers(ErrorHandler)
+            .create();
+    } // only create the skill builder on the first invocation; otherwise it's static
 
-//firebase gcf handler
-let skill;
+   // validate that the signatures match
+    try {
+        const textBody = req.rawBody.toString()
+        await new SkillRequestSignatureVerifier().verify(textBody, req.headers);
+        await new TimestampVerifier().verify(textBody);
+    } catch (err) {
+        // server return err message
+        response.send(403, JSON.stringify(err))
+    }
 
-exports.handler = async function(event, context) {
-  console.log(`REQUEST++++${JSON.stringify(event)}`);
-  if (!skill) {
-    skill = Alexa.SkillBuilders.custom().addRequestHandlers(
-    GetNewFactIntentHandler,
-    SessionEndedRequestHandler,
-    )
-    .addErrorHandlers(ErrorHandler)
-    .create;
-  }
-  
-  const response = await skill.invoke(event,context);
-  console.log(`RESPONSE++++$JSON.stringify(response)}`);
+    // invoke the skill 
+    const responseASK = skill.invoke(req.body);
+    response.send(responseASK.response); // this may just be responseASK
 
-  return response;
-};
-
-
-/*
-app.get('/', (req, res) => {
-  res.send('Hello World Express');
-})
-
-exports.app = functions.https.onRequest(app);
-*/
-
+});
