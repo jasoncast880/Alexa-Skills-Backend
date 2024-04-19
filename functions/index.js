@@ -37,9 +37,15 @@ const getAlexaResponse = (type, name) => {
       AlexaDefaultAnswer.response.outputSpeech.ssml = "<speak>" + currentTime() + "</speak>";
       AlexaDefaultAnswer.response.card.content = currentTime();
       return AlexaDefaultAnswer;
-  } else {
-    return AlexaDefaultAnswer;
+  } else if(type == '"IntentRequest"' && name =='"SmartyPantsIntent"'){
+      AlexaDefaultAnswer.response.outputSpeech.ssml = "<speak>" + smartestGuy() + "</speak>";
+      return AlexaDefaultAnswer;
   }
+  else {
+    return AlexaDefaultAnswer;
+  } 
+
+
 
 };
 
@@ -51,4 +57,8 @@ function currentTime(){
     const date = new Date();
     //Return time in UTC !!!
     return date.getHours() + ":" + date.getMinutes();
+};
+
+function smartestGuy(){
+    return "Jason Castillanes";
 };
