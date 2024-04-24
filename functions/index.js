@@ -1,100 +1,50 @@
 const functions = require('firebase-functions');
 const express = require('express');
-const { ExpressAdapter  } = require('ask-sdk-express-adapter');
+//const { ExpressAdapter } = require('ask-sdk-express-adapter');
 const Alexa = require('ask-sdk-core');
 
-//loging interceptors
-const LogRequestInterceptor = {
-  process(handlerInput) {
-    //Log Req
-    console.log("=REQUEST=");
-    console.log(JSON.stringify(handlerInput.reqestEnvelope, null, 2));
-  }
-}
+function handleAlexaRequest(alexaRequest) {
+    // Parse the Alexa request and determine the intent
+    const intent = alexaRequest.request.intent.name;
 
-const LogResponseInterceptor = {
-  process(handlerInput, response) {
-    //Log Req
-    console.log("=RESPONSE=");
-    console.log(JSON.stringify(response, null, 2));
-  }
-}
+    // Determine the action based on the intent
+    let response;
+    if (intent === 'HelloIntent') {
+        // Construct response for HelloIntent
+        response = {
+            "version": "1.0",
+            "response": {
+                "outputSpeech": {
+                    "type": "PlainText",
+                    "text": "Hello! How can I help you if?"
+                }
+            }
+        };
+    } else {
+        // Construct response for HelloIntent
+        response = {
+            "version": "1.0",
+            "response": {
+                "outputSpeech": {
+                    "type": "PlainText",
+                    "text": "Hello! How can I help you else?"
+                }
+            }
+        };
 
-const LaunchRequestHandler = {
-  canHandle(handlerInput) {
-    Alexa.getIntentName(handlerInput.requestEnvelope) === 'LaunchRequest';
-  },
-  handle(handlerInput) {
-    const speakOutput = 'Welcome to my skill, Hello World';
-    return handlerInput.responseBuilder
-      .speak(speakOutput)
-      .getResponse();
-  }
-};
-
-const GeneralIntentHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-  },
-  handle(handlerInput) {
-    const speakOutput = 'Help me';
-    return handlerInput.responseBuilder
-      .speak(speakOutput)
-      .getResponse();
-  }
-};
-
-const WeatherIntentHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-    && Alexa.getIntentName(handlerInput.requestEnvelope) === 'WeatherIntent';
-  },
-  handle(handlerInput) {
-    const speakOutput = 'Todays weather is kinda hi.';
-    return handlerInput.responseBuilder
-      .speak(speakOutput)
-      .getResponse();
-  }
-};
-
-const SessionEndedRequestHandler = {
-  canHandle(handlerInput) {
-    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest'
-  },
-  handle(handlerInput) {
-    return handlerInput.responseBuilder.getResponse();
-  }
-};
-
-const ErrorHandler = {
-    canHandle() {
-        return true;
-    },
-    handle(handlerInput, error) {
-        console.log(`Error handled: ${error.message}`);
-        const speakOutput = 'Sorry, I had trouble doing what you asked. Please try again.';
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(speakOutput)
-            .getResponse();
     }
-};
 
-const app = express();
-const skillBuilder = Alexa.SkillBuilders.custom();
-const skill = skillBuilder.addRequestHandlers(
-    LaunchRequestHandler,
-    GeneralIntentHandler,
-    WeatherIntentHandler,
-    SessionEndedRequestHandler)
-  .addErrorHandlers(ErrorHandler)
-  .addRequestInterceptors(LogRequestInterceptor)
-  .addResponseInterceptors(LogResponseInterceptor)
-  .create();
-const adapter = new ExpressAdapter(skill, true, true);
+    return response;
+}
 
-app.get('/', adapter.getRequestHandlers());
+app.use(express.json());
+app.post('/alexaEndpoint', (req, res) => {
+  const alexaRequest = req.body;
+
+  const alexaResponse = handleAlexaRequest(alexaRequest);
+
+  res.json(alexaResponse);
+});
 
 // Define and export the Firebase Cloud Function
-exports.myFirebaseFunction = functions.https.onRequest(app);
+exports.alexaSkill = functions.https.onRequest(app);
