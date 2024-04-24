@@ -37,6 +37,8 @@ function handleAlexaRequest(alexaRequest) {
     return response;
 }
 
+const app = express();
+
 app.use(express.json());
 app.post('/alexaEndpoint', (req, res) => {
   const alexaRequest = req.body;

@@ -15,7 +15,8 @@
   "dependencies": {
     "firebase-functions": "^4.3.1",
     "ask-sdk-core": "^2.7.0",
-    "ask-sdk-express-adapter": "^2.14.0"
+    "ask-sdk-express-adapter": "^2.14.0",
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "firebase-functions-test": "^3.1.0"
